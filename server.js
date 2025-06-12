@@ -8,7 +8,8 @@ const port = process.env.PORT || 3000;
 
 const mongoUri = process.env.MONGO_URI;
 const dbName = process.env.DATABASE;
-const collectionName = process.env.RESULT_COLLECTION;
+const resultCollection = process.env.RESULT_COLLECTION;
+const analysisCollection = process.env.ANALYSIS_COLLECTION;
 
 app.use(cors());
 
@@ -47,7 +48,7 @@ app.get('/api/events/:eventName/:year/sessions', async (req, res) => {
     }
 
     try {
-        const collection = db.collection(collectionName);
+        const collection = db.collection(resultCollection);
 
         const eventDocument = await collection.findOne(
             { EventName: eventName, Year: year },
@@ -96,7 +97,7 @@ app.get('/api/events/:eventName/:year/sessions/:sessionName', async (req, res) =
     }
 
     try {
-        const collection = db.collection(collectionName);
+        const collection = db.collection(resultCollection);
         const sessionFieldPath = `Sessions.${sessionName}`;
 
         const eventDocument = await collection.findOne(
@@ -125,6 +126,30 @@ app.get('/api/events/:eventName/:year/sessions/:sessionName', async (req, res) =
     }
 });
 
+
+app.get('/api/analysis/:year', async (req, res) => {
+    if (!db) {
+        return res.status(503).json({ error: "Database not connected. Please try again later." });
+    }
+    try {
+        const yearParam = req.params.year; 
+        const yearToQuery = parseInt(yearParam, 10);
+        if (isNaN(yearToQuery)) {
+            return res.status(400).json({ message: 'Invalid year format. Please provide a number.' });
+        }
+        const query = { year: yearToQuery };
+        const documents = await db.collection(analysisCollection).find(query).toArray();
+        if (documents.length === 0) {
+            return res.status(404).json({ message: `No events found for the year ${yearToQuery}` });
+        }
+
+        res.status(200).json(documents);
+
+    } catch (error) {
+        console.error('An error occurred while fetching events:', error);
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+});
 
 async function startServer() {
     await connectToMongo();
