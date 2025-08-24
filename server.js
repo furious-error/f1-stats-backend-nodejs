@@ -29,6 +29,10 @@ async function connectToMongo() {
 
 app.use(express.json());
 
+app.get('/api/ping', (req, res) => {
+    res.status(200).json({ message: "Pong" });
+});
+
 // --- API Endpoint to Get All Sessions for a Specific Event by Name and Year ---
 // GET /api/events/:eventName/:year/sessions
 // Example: /api/events/Monaco%20Grand%20Prix/2025/sessions
